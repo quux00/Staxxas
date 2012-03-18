@@ -1,14 +1,15 @@
 package net.thornydev.staxxas;
 
 /**
+ * Using the criteria outlined by Josh Bloch in <i>Effective Java</i>, the 
+ * JAXP {@link javax.xml.stream.XMLStreamException} thrown by the 
+ * {@link javax.xml.stream.XMLStreamWriter} should <strong>not</strong> be a 
+ * checked exception.
+ * 
  * <p>
- * Using the criteria outlined by Josh Bloch in <i>Effective Java</i>, the JAXP
- * XMLStreamException through by an XMLStreamWriter should <strong>not</strong> be
- * a checked exception.
- * </p> 
- * <p>
- * The Staxxas library wraps all these and rethrows its own StaxxasStreamWriterException
- * which is an unchecked exception. 
+ * The Staxxas library wraps all calls that throw this checked exception and 
+ * rethrows its own {@code StaxxasStreamWriterException}, this class, which 
+ * is an unchecked exception. 
  * </p> 
  * @author midpeter444
  */

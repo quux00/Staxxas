@@ -1,6 +1,6 @@
 target/
 recipe.xml
-AppTest.java
-App.java
 .project
 .classpath
+recipe-formatted.xml
+.settings/

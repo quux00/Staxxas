@@ -506,7 +506,6 @@ public class StaxxasStreamWriterTest {
 		String out = writer.toString();
 	
 		String re = "^<\\?\\s*xml\\s+version=\"1.0\"\\s*\\?>\\s*<foo>\\s*<bar>\\s*</bar>\\s*</foo>\\s*$";
-		System.out.println(out);
 		assertTrue(Pattern.compile(re).matcher(out).matches());		
 	}
 	
