@@ -543,42 +543,178 @@ public class StaxxasStreamWriterTest {
 		String reRest = "\\s*<bb:bar>\\s*<bb:baz>\\s*</bb:baz>\\s*<aa:quux>\\s*</aa:quux>\\s*</bb:bar>\\s*</aa:foo>$";
 		assertTrue(out, Pattern.compile(reRest).matcher(out).find());	
 	}
+
+	@Test
+	public void testDeleteMeLater3() throws Exception {
+		StaxxasStreamWriter stxs = null;
+		XMLOutputFactory xof = XMLOutputFactory.newFactory();
+		FileWriter fw = null;
+		try {
+			fw = new FileWriter("staxxas-out.xml");
+			XMLStreamWriter xmlsw = xof.createXMLStreamWriter(fw);
+			stxs = new StaxxasStreamWriter(xmlsw);
+			
+		} catch (XMLStreamException e) {
+			e.printStackTrace();
+			throw e;
+		} catch (IOException e) {
+			e.printStackTrace();
+			throw e;
+		}
+
+		stxs.setDefaultNamespace("http://www.example.com/quux");
+		stxs.mapNamespaceToUri("foo", "http://www.example.com/foo");
+		stxs.mapNamespaceToUri("bar", "http://www.example.com/bar");
+
+		stxs.startDoc();
+		stxs.startRootElement("inventory");
+		
+		stxs.setCurrentNamespace("foo");
+		stxs.startElement("site").
+			prefixedAttribute("foo", "isWarehouse", "yes").
+			characters("Oklahoma City facility").
+			endElement();
+		
+		stxs.setCurrentNamespace("bar");
+		stxs.startElement("capacity").
+			prefixedAttribute("foo", "units", "sq.ft.").
+			characters("200,000").
+			endElement();
+
+		stxs.setCurrentNamespace(null);  // next element(s) in default namespace
+		stxs.startElement("items");
+		
+		stxs.startElement("item");		
+		stxs.setCurrentNamespace("foo");
+		stxs.startElement("sku").characters("ABC123").endElement();
+		stxs.startElement("description").characters("iPad3").endElement();
+		stxs.startElement("quantity").characters("38,500").endElement();
+		stxs.endElement("item");
+		
+		stxs.setCurrentNamespace(null);
+		stxs.startElement("item");		
+		stxs.setCurrentNamespace("foo");
+		stxs.startElement("sku").characters("DEF456").endElement();
+		stxs.startElement("description").characters("Kindle Fire").endElement();
+		stxs.startElement("quantity").characters("22,200").endElement();
+		
+		stxs.endElement("item");  // use self documenting feature to label close tag 
+		stxs.endElement("items");
+		
+		stxs.endElement("inventory");
+		stxs.endDoc();
+		fw.close();
+	}
+
+	// TODO: 1) alternative startElement that accepts namespace prefix
+	// TODO: 2) accepts FileWriter (or just filename) and wraps all the XMLOutputFactory stuff
 	
 	@Test
+	public void testDeleteMeLater2() {
+		try {
+			FileWriter fw = new FileWriter("jaxp-stax-out.xml");
+			XMLOutputFactory xmlof = XMLOutputFactory.newFactory();
+			XMLStreamWriter xmlsw = xmlof.createXMLStreamWriter(fw);
+			xmlsw.writeStartDocument();
+			
+			// have to set up prefixes like this first
+			xmlsw.setDefaultNamespace("http://www.example.com/quux");
+			xmlsw.setPrefix("foo", "http://www.example.com/foo");
+			xmlsw.setPrefix("bar", "http://www.example.com/bar");
+
+			xmlsw.writeStartElement("inventory");
+			xmlsw.writeDefaultNamespace("http://www.example.com/quux");
+			xmlsw.writeNamespace("foo", "http://www.example.com/foo");
+			xmlsw.writeNamespace("bar", "http://www.example.com/bar");		
+
+			xmlsw.writeStartElement("http://www.example.com/foo", "site");
+			xmlsw.writeAttribute("http://www.example.com/foo", "isWarehouse", "yes");
+			xmlsw.writeCharacters("Oklahoma City facility");
+			xmlsw.writeEndElement();
+			
+			xmlsw.writeStartElement("http://www.example.com/bar", "capacity");
+			xmlsw.writeAttribute("http://www.example.com/foo", "units", "sq.ft.");
+			xmlsw.writeCharacters("200,000");
+			xmlsw.writeEndElement();
+			
+			xmlsw.writeStartElement("items");
+			
+			xmlsw.writeStartElement("item");
+			xmlsw.writeStartElement("http://www.example.com/foo", "sku");
+			xmlsw.writeCharacters("ABC123");
+			xmlsw.writeEndElement();
+			xmlsw.writeStartElement("http://www.example.com/foo", "description");
+			xmlsw.writeCharacters("iPad3");
+			xmlsw.writeEndElement();
+			xmlsw.writeStartElement("http://www.example.com/foo", "quantity");
+			xmlsw.writeCharacters("38,500");
+			xmlsw.writeEndElement();
+			xmlsw.writeEndElement();
+
+			xmlsw.writeStartElement("item");
+			xmlsw.writeStartElement("http://www.example.com/foo", "sku");
+			xmlsw.writeCharacters("DEF456");
+			xmlsw.writeEndElement();
+			xmlsw.writeStartElement("http://www.example.com/foo", "description");
+			xmlsw.writeCharacters("Kindle Fire");
+			xmlsw.writeEndElement();
+			xmlsw.writeStartElement("http://www.example.com/foo", "quantity");
+			xmlsw.writeCharacters("22,200");
+			xmlsw.writeEndElement();
+			xmlsw.writeEndElement();
+
+			xmlsw.writeEndElement();
+			
+			xmlsw.writeEndElement();
+			xmlsw.writeEndDocument();
+			xmlsw.flush();
+			xmlsw.close();
+			fw.close();
+
+		} catch (FactoryConfigurationError e) {
+			e.printStackTrace();
+		} catch (XMLStreamException e) {
+			e.printStackTrace();
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+	}
+	
+	//@Test
 	public void testDeleteMeLater() {
 		try {
 			XMLOutputFactory xmlof = XMLOutputFactory.newFactory();
-			XMLStreamWriter xmlsw = xmlof.createXMLStreamWriter(new FileWriter("recipe.xml"));
+			XMLStreamWriter xmlsw = xmlof.createXMLStreamWriter(new FileWriter("jaxp-stax-out.xml"));
 			xmlsw.writeStartDocument();
-			xmlsw.setPrefix("h", "http://www.w3.org/1999/xhtml");
-			xmlsw.writeStartElement("http://www.w3.org/1999/xhtml", "html");
-			xmlsw.writeNamespace("h", "http://www.w3.org/1999/xhtml");
-			xmlsw.writeNamespace("r", "http://www.tutortutor.ca/");
-			xmlsw.writeDefaultNamespace("http://www.weirdal.com/white-n-nerdy");
-			xmlsw.writeStartElement("http://www.w3.org/1999/xhtml", "head");
-			xmlsw.writeStartElement("http://www.w3.org/1999/xhtml", "title");
+			xmlsw.setPrefix("foo", "http://www.example.com/foo");
+			xmlsw.writeStartElement("http://www.example.com/foo", "html");
+			xmlsw.writeNamespace("foo", "http://www.example.com/foo");
+			xmlsw.writeNamespace("bar", "http://www.example.com/bar");
+			xmlsw.writeDefaultNamespace("http://www.example.com/default");
+			xmlsw.writeStartElement("http://www.example.com/foo", "head");
+			xmlsw.writeStartElement("http://www.example.com/foo", "title");
 			xmlsw.writeCharacters("Recipe");
 			xmlsw.writeEndElement();
 			xmlsw.writeEndElement();
-			xmlsw.writeStartElement("http://www.w3.org/1999/xhtml", "body");
-			xmlsw.setPrefix("r", "http://www.tutortutor.ca/");
-			xmlsw.writeStartElement("http://www.tutortutor.ca/", "recipe");
-			xmlsw.writeStartElement("http://www.tutortutor.ca/", "title");
+			xmlsw.writeStartElement("http://www.example.com/foo", "body");
+			xmlsw.setPrefix("bar", "http://www.example.com/bar");
+			xmlsw.writeStartElement("http://www.example.com/bar", "recipe");
+			xmlsw.writeStartElement("http://www.example.com/bar", "title");
 			xmlsw.writeCharacters("Grilled Cheese Sandwich");
 			xmlsw.writeEndElement();
-			xmlsw.writeStartElement("http://www.tutortutor.ca/", "ingredients");
-			xmlsw.setPrefix("h", "http://www.w3.org/1999/xhtml");
-			xmlsw.writeStartElement("http://www.w3.org/1999/xhtml", "ul");
-			xmlsw.writeStartElement("http://www.w3.org/1999/xhtml", "li");
-			xmlsw.setPrefix("r", "http://www.tutortutor.ca/");
-			xmlsw.writeStartElement("http://www.tutortutor.ca/", "ingredient");
+			xmlsw.writeStartElement("http://www.example.com/bar", "ingredients");
+			xmlsw.setPrefix("h", "http://www.example.com/foo");
+			xmlsw.writeStartElement("http://www.example.com/foo", "ul");
+			xmlsw.writeStartElement("http://www.example.com/foo", "li");
+			xmlsw.setPrefix("r", "http://www.example.com/bar");
+			xmlsw.writeStartElement("http://www.example.com/bar", "ingredient");
 			xmlsw.writeAttribute("qty", "2");
 			xmlsw.writeCharacters("bread slice");
 			xmlsw.writeEndElement();
-			xmlsw.setPrefix("h", "http://www.w3.org/1999/xhtml");
+			xmlsw.setPrefix("h", "http://www.example.com/foo");
 			xmlsw.writeEndElement();
 			xmlsw.writeEndElement();
-			xmlsw.setPrefix("r", "http://www.tutortutor.ca/");
+			xmlsw.setPrefix("r", "http://www.example.com/bar");
 			xmlsw.writeEndElement();
 			xmlsw.writeEndDocument();
 			xmlsw.flush();

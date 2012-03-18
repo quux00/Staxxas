@@ -223,8 +223,13 @@ public class StaxxasStreamWriter {
      * specified a namespace prefix to URI mapping via mapNamespaceToUri (or in the 
      * constructor that accepts a map).
      * 
-     * <p>If you pass in a namespace prefix that has not been 'registered' via 
-     * {@code mapNamespaceToUri} an {@code IllegalArgumentException} will be thrown.
+     * <p>You may pass in null in order to "unset" the current namespace in order
+     * to use the default namespace or just have an unprefixed element.
+     * </p>
+     * 
+     * <p>If you pass in an argument (other than {@code null}) that has not been 
+     * 'registered' via {@code mapNamespaceToUri} an {@code IllegalArgumentException} 
+     * will be thrown.
      * </p>
      * 
      * <p><strong>Example:</strong> 
@@ -243,7 +248,9 @@ public class StaxxasStreamWriter {
      * @throws IllegalArgumentException if namespace passed in has not already been registered to a URI
      */
     public void setCurrentNamespace(String ns) {
-    	if (!m.containsKey(ns)) {
+    	if (ns == null) {
+    		currNamespace = null;
+    	} else if (!m.containsKey(ns)) {
     		throw new IllegalArgumentException("Namespace " + ns + " has not been mapped to a uri");
     	}
     	currNamespace = ns;
@@ -265,7 +272,7 @@ public class StaxxasStreamWriter {
      * @return this StaxxasStreamWriter in order to allow method chaining
      */
     public StaxxasStreamWriter startDoc() {
-        try {
+    	try {
           w.writeStartDocument();
           return this;
           
