@@ -33,38 +33,76 @@ First, clone this repo:
 BTW, `mvn install` does all of the above.
 
 #### Create the javadoc
-**Create it only on the filesystem:**:
+Create it only on the filesystem:
 `mvn javadoc:javadoc`
 
-**Create it on the fileystem and package it up as a jar:**:
+Create it on the fileystem and package it up as a jar:
 `mvn javadoc:jar`
-
-
 
 
 ### Rationale and How-to
 
-<?xml version="1.0" ?>
-<inventory xmlns="http://www.example.com/quux" 
-           xmlns:foo="http://www.example.com/foo" 
-           xmlns:bar="http://www.example.com/bar">
-  <foo:site foo:isWarehouse="yes">Oklahoma City facility</foo:site>
-  <bar:capacity foo:units="sq.ft.">200,000</bar:capacity>
-  <items>
-    <item>
-      <foo:sku>ABC123</foo:sku>
-      <foo:description>iPad3</foo:description>
-      <foo:quantity>38,500</foo:quantity>
-    </item>
-    <item>
-      <foo:sku>DEF456</foo:sku>
-      <foo:description>Kindle Fire</foo:description>
-      <foo:quantity>22,200</foo:quantity>
-    </item>
-  </items>
-</inventory>
+The JAXP XMLStreamWriter is a somewhat clunky to use XML writing library. This **Staxxas** library provides a facade that wraps the JAXP XMLStreamWriter. All the writing to the underlying output source or stream is still done by the XMLStreamWriter object that is passed into the constructor of this class.
 
-XMLStreamWriter implementation:
+The Staxxas API simplifies the XMLStreamWriter API and wraps methods so that the API user does not have to handle the checked XMLStreamException that is thrown by the XMLStreamWriter "write" methods.
+
+In particular, this facade provides three primary improvements over the native XMLStreamWriter API:
+
+1. The "write" method names are less verbose, you can do method call chaining and in some cases call fewer methods to get the document written
+2. Only unchecked exceptions are thrown, which wrap any checked exceptions thrown by the underlying library
+3. Namespace handling is simplified
+
+##### Less verbosity, method call chaining, fewer methods calls.
+
+To help decrease the verbosity of the XMLStreamWriter API, any method that starts with "write", such as writeEmptyElement, has been shortened by removing the "write" prefix, such as emptyElement. Those name-shortened methods are just wrappers around the longer methods of the XMLStreamWriter object.
+
+Another aspect of the verbosity of the StAX API is having to pass in the full URI of the namespace whenever you need to associate a namespace with an XML element. This requirement has been removed - see the Simplified namespace handling section below.
+
+In the case of finishing off the XML doc writing, the XMLStreamWriter API writer requires you to call three methods: XMLStreamWriter.writeEndDocument(), followed by XMLStreamWriter.flush(), followed by XMLStreamWriter.close(). The Staxxas API only requires that endDoc() be called and it calls flush() and close() on the underlying writer.
+
+##### Only unchecked exceptions
+
+In Effective Java, 2nd edition, Josh Bloch argues that checked exceptions are only appropriate when two conditions hold:
+
+1. The exception cannot be prevented by proper use of the API
+2. The user of the API can take some useful action to recover when the exception occurs.
+
+All of the "write" methods of XMLStreamWriter throw a checked exception. Those exceptions can arise even if the API is used properly, so Bloch's first condition applies, but in that case it likely to be a problem with the file system or stream to which the XML is being written, which a Java programmer has little control over. Thus, the second condition does not apply and the exceptions thrown here should be unchecked.
+
+In the tradition of the Spring framework, all these checked exceptions have been wrapped and are rethrown as an unchecked exception of type StaxxasStreamWriterException.
+
+##### Simplified namespace handling
+
+Lastly, the namepace handling in the XMLStreamWriter is rather ghastly and unnecessarily verbose. In the Staxxas API, you basically only have to map all your namespace prefixes to their corresponding namespace APIs at the beginning and then call setCurrentNamespace(prefix) passing in the prefix that is current. All subsequent startElement() calls will use that namespace until setCurrentNamespace(prefix) is called with a different current namespace.
+
+A default namespace can also be specified and any unprefixed XML elements will be associated with that default namespace. A unprefixed XML element can be set by calling setCurrentNamespace(null) or startElement("myEltName", null).
+
+#### Example
+
+Goal: create the following XML file.
+
+    <?xml version="1.0" ?>
+    <inventory xmlns="http://www.example.com/quux" 
+               xmlns:foo="http://www.example.com/foo" 
+               xmlns:bar="http://www.example.com/bar">
+      <foo:site foo:isWarehouse="yes">Oklahoma City facility</foo:site>
+      <bar:capacity foo:units="sq.ft.">200,000</bar:capacity>
+      <items>
+        <item>
+          <foo:sku>ABC123</foo:sku>
+          <foo:description>iPad3</foo:description>
+          <foo:quantity>38,500</foo:quantity>
+        </item>
+        <item>
+          <foo:sku>DEF456</foo:sku>
+          <foo:description>Kindle Fire</foo:description>
+          <foo:quantity>22,200</foo:quantity>
+        </item>
+      </items>
+    </inventory>
+
+
+**The XMLStreamWriter implementation is shown below.**  Note the general verbosity, how the whole thing must be wrapped in a try/catch block and how the full namespace must be passed in to use prefixes to the elements.
 
     try {
         FileWriter fw = new FileWriter("jaxp-stax-out.xml");
@@ -136,24 +174,18 @@ XMLStreamWriter implementation:
     }
 
 
-Staxxas implementation:
+**Here is Staxxas implementation by contrast:**
 
-    StaxxasStreamWriter stxs = null;
-    XMLOutputFactory xof = XMLOutputFactory.newFactory();
     FileWriter fw = null;
     try {
         fw = new FileWriter("staxxas-out.xml");
-        XMLStreamWriter xmlsw = xof.createXMLStreamWriter(fw);
-        stxs = new StaxxasStreamWriter(xmlsw);
         
-    } catch (XMLStreamException e) {
-        e.printStackTrace();
-        throw e;
     } catch (IOException e) {
         e.printStackTrace();
         throw e;
     }
 
+    StaxxasStreamWriter stxs = new StaxxasStreamWriter(fw);
     stxs.setDefaultNamespace("http://www.example.com/quux");
     stxs.mapNamespaceToUri("foo", "http://www.example.com/foo");
     stxs.mapNamespaceToUri("bar", "http://www.example.com/bar");
@@ -183,9 +215,7 @@ Staxxas implementation:
     stxs.startElement("quantity").characters("38,500").endElement();
     stxs.endElement("item");
     
-    stxs.setCurrentNamespace(null);
-    stxs.startElement("item");      
-    stxs.setCurrentNamespace("foo");
+    stxs.startElement("item", null);  // unset currNamespace only for this node
     stxs.startElement("sku").characters("DEF456").endElement();
     stxs.startElement("description").characters("Kindle Fire").endElement();
     stxs.startElement("quantity").characters("22,200").endElement();
@@ -195,4 +225,3 @@ Staxxas implementation:
     
     stxs.endElement("inventory");
     stxs.endDoc();
-    fw.close();

@@ -39,8 +39,7 @@ public class StaxxasStreamWriterTest {
 	@Before
 	public void setUp() throws Exception {
 		writer = new StringWriter(); 
-		XMLOutputFactory xof = XMLOutputFactory.newFactory();
-	    sx = new StaxxasStreamWriter( xof.createXMLStreamWriter(writer) );
+	    sx = new StaxxasStreamWriter(writer);
 	}
 
 	@Test
@@ -51,54 +50,6 @@ public class StaxxasStreamWriterTest {
 		
 		String out = writer.toString().trim();
 		String re = "^<\\?\\s*xml\\s+version=\"1.0\"\\s*\\?>";
-		Matcher m = Pattern.compile(re).matcher(out);
-		assertTrue(out, m.find());
-		assertTrue(out, m.matches());
-	}
-
-	@Test
-	public void testProcessingInstruction() {
-		sx.startDoc();
-		sx.processingInstruction("quux");
-		sx.processingInstruction("xml-stylesheet", "type=\"text/css\" href=\"style.css\"");
-		sx.emptyElement("foo");
-		sx.endDoc();
-		assertNotNull(writer.toString());
-
-
-		String out = writer.toString().trim();
-		// <?xml version="1.0" ?><?quux?><?xml-stylesheet type="text/css" href="style.css"?><foo/>
-		String re = "^<\\?\\s*xml\\s+version=\"1.0\"\\s*\\?><\\?\\s*quux\\s*\\?>"
-				+"<\\?xml-stylesheet\\s+type=\"text/css\"\\s+href=\"style.css\"\\s*\\?>\\s*<foo/>\\s*$";
-		Matcher m = Pattern.compile(re).matcher(out);
-		assertTrue(out, m.matches());
-	}
-
-	@Test
-	public void testEntityRef() {
-		//apos
-		sx.startDoc();
-		sx.startElement("foo");
-		sx.entityRef("apos");
-		sx.emptyElement("bar");
-		sx.entityRef("frankenstein");
-		sx.endElement();
-		sx.endDoc();
-		assertNotNull(writer.toString());
-
-		String out = writer.toString().trim();
-		String re = "^<\\?\\s*xml\\s+version=\"1.0\"\\s*\\?>\\s*<foo>\\s*&apos;\\s*<bar/>\\s*&frankenstein;\\s*</foo>\\s*$";
-		assertTrue(Pattern.compile(re).matcher(out).matches());
-	}
-	
-	@Test
-	public void testStartAndEndDocWithEncodingAndVersion() {
-		sx.startDoc("UTF-8", "1.1");
-		sx.endDoc();
-		assertNotNull(writer.toString());
-		
-		String out = writer.toString().trim();
-		String re = "^<\\?\\s*xml\\s+version=\"1.1\"\\s*encoding=\"UTF-8\"\\s*\\?>";
 		Matcher m = Pattern.compile(re).matcher(out);
 		assertTrue(out, m.find());
 		assertTrue(out, m.matches());
@@ -120,6 +71,48 @@ public class StaxxasStreamWriterTest {
 		assertTrue(out, Pattern.compile(reBody).matcher(out).find());
 	}
 
+	@Test
+	public void testConstructorTakesXMLStreamWriter() throws Exception {
+		XMLOutputFactory xof = XMLOutputFactory.newFactory();
+	    sx = new StaxxasStreamWriter( xof.createXMLStreamWriter(writer) );
+	
+		sx.startDoc();
+		sx.startElement("foo");
+		sx.endElement();
+		sx.endDoc();
+		assertNotNull(writer.toString());
+		
+		String out = writer.toString().trim();
+		String reDecl = "^<\\?\\s*xml\\s+version=\"1.0\"\\s*\\?>";
+		assertTrue(out, Pattern.compile(reDecl).matcher(out).find());
+	
+		String reBody = "<foo>\\s*</foo>$";
+		assertTrue(out, Pattern.compile(reBody).matcher(out).find());
+	}
+	
+	@Test
+	public void testStartAndEndElementCompound() {
+		sx.startDoc();
+		sx.startElement("foo");
+		sx.startElement("bar");
+		sx.startElement("baz").endElement();
+		sx.startElement("quux").endElement();
+		sx.emptyElement("wibble");
+		sx.endElement("bar");
+		sx.endElement("foo");
+		sx.endDoc();
+		assertNotNull(writer.toString());
+		
+		String out = writer.toString().trim();
+		String reDecl = "^<\\?\\s*xml\\s+version=\"1.0\"\\s*\\?>";
+		assertTrue(out, Pattern.compile(reDecl).matcher(out).find());
+	
+		String reBody = "\\s*<foo>\\s*<bar>\\s*<baz>\\s*</baz>\\s*<quux>\\s*</quux>\\s*<wibble/>\\s*</bar>\\s*</foo>$";
+		assertTrue(out, Pattern.compile(reBody).matcher(out).find());	
+	}
+
+	
+	
 	@Test
 	public void testWriteCharacters() throws Exception {
 		String barText = "I am the text in bar.\nLine 2.";
@@ -176,28 +169,56 @@ public class StaxxasStreamWriterTest {
 		assertNotNull(n);
 		assertEquals(comment2, n.getNodeValue());
 	}
-	
+
 	@Test
-	public void testStartAndEndElementCompound() {
+	public void testProcessingInstruction() {
+		sx.startDoc();
+		sx.processingInstruction("quux");
+		sx.processingInstruction("xml-stylesheet", "type=\"text/css\" href=\"style.css\"");
+		sx.emptyElement("foo");
+		sx.endDoc();
+		assertNotNull(writer.toString());
+
+
+		String out = writer.toString().trim();
+		// <?xml version="1.0" ?><?quux?><?xml-stylesheet type="text/css" href="style.css"?><foo/>
+		String re = "^<\\?\\s*xml\\s+version=\"1.0\"\\s*\\?><\\?\\s*quux\\s*\\?>"
+				+"<\\?xml-stylesheet\\s+type=\"text/css\"\\s+href=\"style.css\"\\s*\\?>\\s*<foo/>\\s*$";
+		Matcher m = Pattern.compile(re).matcher(out);
+		assertTrue(out, m.matches());
+	}
+
+	@Test
+	public void testEntityRef() {
+		//apos
 		sx.startDoc();
 		sx.startElement("foo");
-		sx.startElement("bar");
-		sx.startElement("baz").endElement();
-		sx.startElement("quux").endElement();
-		sx.emptyElement("wibble");
-		sx.endElement("bar");
-		sx.endElement("foo");
+		sx.entityRef("apos");
+		sx.emptyElement("bar");
+		sx.entityRef("frankenstein");
+		sx.endElement();
+		sx.endDoc();
+		assertNotNull(writer.toString());
+
+		String out = writer.toString().trim();
+		String re = "^<\\?\\s*xml\\s+version=\"1.0\"\\s*\\?>\\s*<foo>\\s*&apos;\\s*<bar/>\\s*&frankenstein;\\s*</foo>\\s*$";
+		assertTrue(Pattern.compile(re).matcher(out).matches());
+	}
+	
+	@Test
+	public void testStartAndEndDocWithEncodingAndVersion() {
+		sx.startDoc("UTF-8", "1.1");
 		sx.endDoc();
 		assertNotNull(writer.toString());
 		
 		String out = writer.toString().trim();
-		String reDecl = "^<\\?\\s*xml\\s+version=\"1.0\"\\s*\\?>";
-		assertTrue(out, Pattern.compile(reDecl).matcher(out).find());
-	
-		String reBody = "\\s*<foo>\\s*<bar>\\s*<baz>\\s*</baz>\\s*<quux>\\s*</quux>\\s*<wibble/>\\s*</bar>\\s*</foo>$";
-		assertTrue(out, Pattern.compile(reBody).matcher(out).find());	
+		String re = "^<\\?\\s*xml\\s+version=\"1.1\"\\s*encoding=\"UTF-8\"\\s*\\?>";
+		Matcher m = Pattern.compile(re).matcher(out);
+		assertTrue(out, m.find());
+		assertTrue(out, m.matches());
 	}
 
+	
 	@Test
 	public void testStartAndEndElementSimpleWithNamespaces() {
 	    sx.mapNamespaceToUri("quux", "http://www.quux.org/quux");
@@ -545,23 +566,107 @@ public class StaxxasStreamWriterTest {
 	}
 
 	@Test
+	public void testMixPrefixedAndDefaultNamespaces() throws Exception {
+		Map<String,String> nsToUri = new HashMap<String,String>();
+		nsToUri.put("foo", "http://www.example.com/foo");
+		nsToUri.put("bar", "http://www.example.com/bar");
+		
+		sx.mapNamespaceToUri(nsToUri);
+		String defaultNsUri = "http://www.example.com/quux";
+		sx.setDefaultNamespace(defaultNsUri);
+
+		sx.startDoc();
+		sx.startRootElement("inventory");
+		
+		sx.setCurrentNamespace("foo");
+		sx.startElement("site").
+			prefixedAttribute("foo", "isWarehouse", "yes").
+			characters("Oklahoma City facility").
+			endElement();
+
+		// set prefix for this one element only in the startElement call
+		sx.startElement("capacity", "bar").
+			prefixedAttribute("foo", "units", "sq.ft.").
+			characters("200,000").
+			endElement();
+
+		sx.setCurrentNamespace(null);  // next element(s) in default namespace
+		sx.startElement("items");
+		
+		sx.startElement("item");		
+		sx.setCurrentNamespace("foo");
+		sx.startElement("sku").characters("ABC123").endElement();
+		sx.startElement("description").characters("iPad3").endElement();
+		sx.startElement("quantity").characters("38,500").endElement();
+		sx.endElement("item");
+		
+		sx.startElement("item", null);  // unset currName only for this one element
+		sx.setCurrentNamespace("foo");
+		sx.startElement("sku").characters("DEF456").endElement();
+		sx.startElement("description").characters("Kindle Fire").endElement();
+		sx.startElement("quantity").characters("22,200").endElement();
+		
+		sx.endElement("item");  // use self documenting feature to label close tag 
+		sx.endElement("items");
+		
+		sx.endElement("inventory");
+		sx.endDoc();
+		
+		String out = writer.toString();
+		Document doc = createDOM(out);
+		nsToUri.put("def", defaultNsUri);  // add it here for the XPath NamespaceContext
+		XPath xp = createXPath(nsToUri);
+		
+		NodeList nl = null;
+		Node     n = null;
+		String   s = null;
+		
+		nl = (NodeList) xp.evaluate("//*", doc, XPathConstants.NODESET);
+		assertNotNull(nl);
+		assertEquals(12, nl.getLength());
+
+		nl = (NodeList) xp.evaluate("/def:inventory", doc, XPathConstants.NODESET);
+		assertNotNull(nl);
+		assertEquals(1, nl.getLength());
+
+		nl = (NodeList) xp.evaluate("//def:item", doc, XPathConstants.NODESET);
+		assertNotNull(nl);
+		assertEquals(2, nl.getLength());
+	
+		nl = (NodeList) xp.evaluate("/def:inventory/def:items/def:item/foo:sku", 
+				doc, XPathConstants.NODESET);
+		assertNotNull(nl);
+		assertEquals(2, nl.getLength());
+	
+		nl = (NodeList) xp.evaluate("//def:item/foo:quantity", 
+				doc, XPathConstants.NODESET);
+		assertNotNull(nl);
+		assertEquals(2, nl.getLength());
+	
+		s = (String) xp.evaluate("//bar:capacity/text()", doc, XPathConstants.STRING);
+		assertEquals("200,000", s);
+
+		n = (Node) xp.evaluate("//bar:capacity/@foo:units", doc, XPathConstants.NODE);
+		assertNotNull(n);
+		assertEquals("sq.ft.", n.getNodeValue());
+		
+		s = (String) xp.evaluate("//def:item[2]/foo:description/text()", doc, 
+				XPathConstants.STRING);
+		assertEquals("Kindle Fire", s);
+	}
+	
+	@Test
 	public void testDeleteMeLater3() throws Exception {
-		StaxxasStreamWriter stxs = null;
-		XMLOutputFactory xof = XMLOutputFactory.newFactory();
 		FileWriter fw = null;
 		try {
 			fw = new FileWriter("staxxas-out.xml");
-			XMLStreamWriter xmlsw = xof.createXMLStreamWriter(fw);
-			stxs = new StaxxasStreamWriter(xmlsw);
 			
-		} catch (XMLStreamException e) {
-			e.printStackTrace();
-			throw e;
 		} catch (IOException e) {
 			e.printStackTrace();
 			throw e;
 		}
 
+		StaxxasStreamWriter stxs = new StaxxasStreamWriter(fw);
 		stxs.setDefaultNamespace("http://www.example.com/quux");
 		stxs.mapNamespaceToUri("foo", "http://www.example.com/foo");
 		stxs.mapNamespaceToUri("bar", "http://www.example.com/bar");
@@ -591,9 +696,7 @@ public class StaxxasStreamWriterTest {
 		stxs.startElement("quantity").characters("38,500").endElement();
 		stxs.endElement("item");
 		
-		stxs.setCurrentNamespace(null);
-		stxs.startElement("item");		
-		stxs.setCurrentNamespace("foo");
+		stxs.startElement("item", null);  // unset currNamespace only for this one element
 		stxs.startElement("sku").characters("DEF456").endElement();
 		stxs.startElement("description").characters("Kindle Fire").endElement();
 		stxs.startElement("quantity").characters("22,200").endElement();
@@ -603,12 +706,8 @@ public class StaxxasStreamWriterTest {
 		
 		stxs.endElement("inventory");
 		stxs.endDoc();
-		fw.close();
 	}
 
-	// TODO: 1) alternative startElement that accepts namespace prefix
-	// TODO: 2) accepts FileWriter (or just filename) and wraps all the XMLOutputFactory stuff
-	
 	@Test
 	public void testDeleteMeLater2() {
 		try {

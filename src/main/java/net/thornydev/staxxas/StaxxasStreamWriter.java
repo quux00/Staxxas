@@ -1,8 +1,12 @@
 package net.thornydev.staxxas;
 
+import java.io.IOException;
+import java.io.Writer;
 import java.util.HashMap;
 import java.util.Map;
 
+import javax.xml.stream.FactoryConfigurationError;
+import javax.xml.stream.XMLOutputFactory;
 import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamWriter;
 
@@ -81,9 +85,9 @@ import javax.xml.stream.XMLStreamWriter;
  * </p>
  * 
  * <p>A default namespace can also be specified and any unprefixed
- * XML elements will be associated with that default namespace.</p>
- * 
- * TODO: fill in more ??
+ * XML elements will be associated with that default namespace.  A unprefixed
+ * XML element can be set by calling {@code setCurrentNamespace(null)} 
+ * or {@code startElement("myEltName", null)}.</p>
  * 
  * <h6>Thread Safety</h6>
  * <p><strong>This class is not thread-safe.</strong> I could have designed the 
@@ -100,6 +104,13 @@ public class StaxxasStreamWriter {
 	 * The JAXP XMLStreamWriter - it does all the actual writing of the XML doc.
 	 */
 	private final XMLStreamWriter w;
+
+	/**
+	 * The java.io.Writer underlying the XMLStreamWriter.
+	 * Keep a reference to this if it is passed to the constructor, so we
+	 * can close it when endDoc() is called.  Optional.
+	 */
+	private final Writer writer;
 
 	/**
 	 * Map of namespace prefixes to URIs that should be written to the document.
@@ -139,10 +150,69 @@ public class StaxxasStreamWriter {
      */
     public StaxxasStreamWriter(XMLStreamWriter sw, Map<String,String> nsToUri) {
     	w = sw;
+    	writer = null;
     	if (nsToUri == null) m = new HashMap<String,String>();
     	else 	             m = nsToUri;
     }
 
+    /**
+     * Creates a StaxxasStreamWriter with a Writer that gets passed to a StAX 
+     * {@link javax.xml.stream.XMLStreamWriter} and accepting a filled out set 
+     * of mappings of namespace prefixes to namespace URIs.  By passing in a 
+     * {@link java.io.Writer}, this method will create the {@code XMLStreamWriter}
+     * with it.
+     * 
+     * <p>The advantages of using this constructor are that it wraps all 
+     * the constructor of the {@code XMLStreamWriter} and when {@code endDoc()}
+     * is called it will also flush and close the {@code Writer}, not just the 
+     * {@code XMLStreamWriter}.</p>
+     * 
+     * <p>The disadvantage of using this constructor is that the caller will 
+     * not have access to the {@link XMLOutputFactory} that creates the 
+     * {@code XMLStreamWriter}, and so cannot modify any settings on those objects.
+     * </p>
+     * 
+     * @param writer the Writer object to write the XML document to
+     * writing of the XML elements and content
+     * @param nsToUri Map of each namespace (prefix) to its corresponding URI
+     * @throws StaxxasStreamWriterException (RuntimeException) if the underlying 
+     * StAX library throws an {@code XMLStreamException} or the {@link XMLOutputFactory}
+     * throws a {@link FactoryConfigurationError} when creating the 
+     * {@code XMLStreamWriter}.
+     */
+    public StaxxasStreamWriter(Writer writer, Map<String,String> nsToUri) {
+    	try {
+    		this.writer = writer;
+			w = XMLOutputFactory.newFactory().createXMLStreamWriter(writer);
+		} catch (XMLStreamException e) {
+    		throw new StaxxasStreamWriterException("StaxxasStreamWriter constructor",
+    				"XMLOutputFactory.newFactory().createXMLStreamWriter(writer)", e);
+		} catch (FactoryConfigurationError e) {
+    		throw new StaxxasStreamWriterException("StaxxasStreamWriter constructor",
+    				"XMLOutputFactory.newFactory().createXMLStreamWriter(writer)", e);
+		}
+    	if (nsToUri == null) m = new HashMap<String,String>();
+    	else 	             m = nsToUri;
+    }
+
+    /**
+     * Creates a StaxxasStreamWriter with a Writer that gets passed to a StAX 
+     * {@link javax.xml.stream.XMLStreamWriter}.
+     * 
+     * <p>See additional documentation in the other constructor that takes
+     * a Writer.</p>
+     * 
+     * @param writer the Writer object to write the XML document to
+     * writing of the XML elements and content
+     * @throws StaxxasStreamWriterException (RuntimeException) if the underlying 
+     * StAX library throws an {@code XMLStreamException} or the {@link XMLOutputFactory}
+     * throws a {@link FactoryConfigurationError} when creating the 
+     * {@code XMLStreamWriter}.
+     */    
+    public StaxxasStreamWriter(Writer writer) {
+    	this(writer, null);
+    }
+    
     /**
      * Creates a StaxxasStreamWriter wrapping a StAX {@link javax.xml.stream.XMLStreamWriter}.
      * 
@@ -245,7 +315,8 @@ public class StaxxasStreamWriter {
      * </p>
      * 
      * @param ns String namespace prefix that has already been registered to a URI
-     * @throws IllegalArgumentException if namespace passed in has not already been registered to a URI
+     * @throws IllegalArgumentException if namespace passed in has not already been 
+     * registered to a URI
      */
     public void setCurrentNamespace(String ns) {
     	if (ns == null) {
@@ -267,13 +338,14 @@ public class StaxxasStreamWriter {
      * calling any other "write" methods. It delegates to 
      * {@link XMLStreamWriter#writeStartDocument()}</p>
      * 
-     * @throws StaxxasStreamWriterException (RuntimeException) if the underlying StAX library 
-     * throws an XMLStreamException 
+     * @throws StaxxasStreamWriterException (RuntimeException) if the underlying 
+     * StAX library throws an XMLStreamException 
      * @return this StaxxasStreamWriter in order to allow method chaining
      */
     public StaxxasStreamWriter startDoc() {
     	try {
           w.writeStartDocument();
+          setPrefixes();
           return this;
           
         } catch (XMLStreamException e) {
@@ -299,6 +371,7 @@ public class StaxxasStreamWriter {
     public StaxxasStreamWriter startDoc(String version) {
         try {
           w.writeStartDocument(version);
+          setPrefixes();
           return this;
           
         } catch (XMLStreamException e) {
@@ -332,6 +405,7 @@ public class StaxxasStreamWriter {
     public StaxxasStreamWriter startDoc(String encoding, String version) {
         try {
           w.writeStartDocument(encoding, version);
+          setPrefixes();
           return this;
           
         } catch (XMLStreamException e) {
@@ -358,11 +432,20 @@ public class StaxxasStreamWriter {
     		w.writeEndDocument();
     		w.flush();
     		w.close();
+    		// if user gave us the java.io.Writer directly, we also 
+    		// flush and close that
+    		if (writer != null) {
+    			writer.flush();
+    			writer.close();
+    		}
     		return this;
     	} catch (XMLStreamException e) {
             throw new StaxxasStreamWriterException("endDoc", 
             		"writeEndDocument/flush/close", e);    		
-    	}
+    	} catch (IOException e) {
+            throw new StaxxasStreamWriterException("endDoc", 
+            		"writeEndDocument/flush/close", e);    		
+		}
     }
 
 
@@ -382,7 +465,6 @@ public class StaxxasStreamWriter {
      * @return this StaxxasStreamWriter in order to allow method chaining
      */
     public StaxxasStreamWriter startRootElement(String localName) {
-		setPrefix();
 		writeElement(localName);
 		writeRootNamespaces(localName);
 		return this;    	
@@ -403,8 +485,34 @@ public class StaxxasStreamWriter {
      * @return this StaxxasStreamWriter in order to allow method chaining
      */
     public StaxxasStreamWriter startElement(String localName) {
-		setPrefix();
 		writeElement(localName);
+		return this;
+    }
+
+    /**
+     * Starts a new XML element with the element name and the namespace
+     * prefix passed in.  This is an alternative to calling 
+     * {@code setCurrentNamespace()} before calling {@code startElement}.
+     * 
+     * <p>The namespace prefix passed in only applies to this element and
+     * does not change the current namespace for other elements. It is
+     * allowable to pass in {@code null} for the nsPrefix parameter; doing
+     * so will unset the current namespace (for this element only) and 
+     * write an unprefixed element associated with the default namespace
+     * (if any).<p>
+     * 
+     * @param localName name of XML element to start
+     * @param nsPrefix registered prefix to use for this element. <code>null</code>
+     * is allowed to map to the default namespace.
+     * @throws StaxxasStreamWriterException (RuntimeException) if the underlying 
+     * StAX library throws an XMLStreamException 
+     * @return this StaxxasStreamWriter in order to allow method chaining
+     */
+    public StaxxasStreamWriter startElement(String localName, String nsPrefix) {
+		String hold = currNamespace;
+		currNamespace = nsPrefix;
+    	writeElement(localName);
+    	currNamespace = hold;
 		return this;
     }
 
@@ -418,7 +526,6 @@ public class StaxxasStreamWriter {
      * @return this StaxxasStreamWriter in order to allow method chaining
      */
     public StaxxasStreamWriter emptyElement(String localName) {
-    	setPrefix();
     	writeEmptyElement(localName);
     	return this;
     }
@@ -709,21 +816,23 @@ public class StaxxasStreamWriter {
     	}
     }
 
+    
     /**
-     * Sets the prefix on the XMLStreamWriter state machine so it has a
-     * mapping of the namespace ("prefix") to the appropriate URI
+     * Sets the mappings of prefixes to URIs on the XMLStreamWriter.
+     * Should only be called from startDoc() after calling
+     * {@link XMLStreamWriter#writeStartDocument()} (or one of the
+     * other <code>startDocument</code> methods).
      * 
-     * @throws StaxxasStreamWriterException (RuntimeException) if the underlying StAX library 
-     * throws an XMLStreamException 
-     */
-    private void setPrefix() {
-    	String uri = m.get(currNamespace);
-    	if (currNamespace != null) {
-    		try {
-    			w.setPrefix(currNamespace, uri);
-    		} catch (XMLStreamException e) {
-    			throw new StaxxasStreamWriterException("startElement", "setPrefix", e);    					
-    		}	
+     * @throws StaxxasStreamWriterException (RuntimeException) if the underlying
+     * StAX library throws an XMLStreamException 
+     */    private void setPrefixes() {
+    	try {
+    		for (String p: m.keySet()) {
+    			w.setPrefix(p, m.get(p));
+    		}
+    	} catch (XMLStreamException e) {
+			throw new StaxxasStreamWriterException("startDocument", 
+					"setPrefixes", e);    					    		
     	}
     }
 }
