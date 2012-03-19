@@ -101,7 +101,7 @@ Goal: create the following XML file.
     </inventory>
 
 
-**The XMLStreamWriter implementation to write the above XML document is shown below.**  Note the general verbosity, how the whole thing must be wrapped in a try/catch block and how the full namespace must be passed in to use prefixes to the elements.  Also, note that you must call flush and close on _both_ the `XMLStreamWriter` and the `java.io.Writer` objects.
+**The XMLStreamWriter implementation is shown below.**  Note the general verbosity, how the whole thing must be wrapped in a try/catch block and how the full namespace must be passed in to use prefixes to the elements.  Also, note that you must call flush and close on _both_ the `XMLStreamWriter` and the `java.io.Writer` objects.
 
     try {
         FileWriter fw = new FileWriter("jaxp-stax-out.xml");
