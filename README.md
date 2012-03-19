@@ -1,9 +1,5 @@
 ## Staxxas StAX XML Document Writer
 
-More details to come later ...
-
-
-
 ### Dependencies
 
 * JDK 1.6
@@ -39,6 +35,7 @@ Create it only on the filesystem:
 Create it on the fileystem and package it up as a jar:
 `mvn javadoc:jar`
 
+<hr/>
 
 ### Rationale and How-to
 
@@ -77,7 +74,9 @@ Lastly, the namepace handling in the XMLStreamWriter is rather ghastly and unnec
 
 A default namespace can also be specified and any unprefixed XML elements will be associated with that default namespace. A unprefixed XML element can be set by calling setCurrentNamespace(null) or startElement("myEltName", null).
 
-#### Example
+<hr/>
+
+#### Full-fledged Example
 
 Goal: create the following XML file.
 
@@ -102,7 +101,7 @@ Goal: create the following XML file.
     </inventory>
 
 
-**The XMLStreamWriter implementation is shown below.**  Note the general verbosity, how the whole thing must be wrapped in a try/catch block and how the full namespace must be passed in to use prefixes to the elements.
+**The XMLStreamWriter implementation to write the above XML document is shown below.**  Note the general verbosity, how the whole thing must be wrapped in a try/catch block and how the full namespace must be passed in to use prefixes to the elements.  Also, note that you must call flush and close on _both_ the `XMLStreamWriter` and the `java.io.Writer` objects.
 
     try {
         FileWriter fw = new FileWriter("jaxp-stax-out.xml");
@@ -225,3 +224,10 @@ Goal: create the following XML file.
     
     stxs.endElement("inventory");
     stxs.endDoc();
+
+
+<hr/>
+
+### Simple Examples 
+
+More here later.  The library is not very large, so the best thing is to look at the StaxxasStreamWriterTest unit test.  It shows simple to complex examples.
