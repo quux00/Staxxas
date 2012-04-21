@@ -30,7 +30,7 @@ import javax.xml.stream.XMLStreamWriter;
  *   by the underlying library</li>
  *   <li>Namespace handling is simplified</li>
  * </ol>
- * </p>	
+ * </p> 
  * 
  * <h6>Less verbosity, method call chaining, fewer methods calls.</h6>
  * <p>To help decrease the verbosity of the XMLStreamWriter API, any method that 
@@ -100,23 +100,23 @@ import javax.xml.stream.XMLStreamWriter;
  *
  */
 public class StaxxasStreamWriter {
-	/**
-	 * The JAXP XMLStreamWriter - it does all the actual writing of the XML doc.
-	 */
-	private final XMLStreamWriter w;
+  /**
+   * The JAXP XMLStreamWriter - it does all the actual writing of the XML doc.
+   */
+  private final XMLStreamWriter w;
 
-	/**
-	 * The java.io.Writer underlying the XMLStreamWriter.
-	 * Keep a reference to this if it is passed to the constructor, so we
-	 * can close it when endDoc() is called.  Optional.
-	 */
-	private final Writer writer;
+  /**
+   * The java.io.Writer underlying the XMLStreamWriter.
+   * Keep a reference to this if it is passed to the constructor, so we
+   * can close it when endDoc() is called.  Optional.
+   */
+  private final Writer writer;
 
-	/**
-	 * Map of namespace prefixes to URIs that should be written to the document.
-	 * This map will <strong>not</strong> include the defaultNamespace, since
-	 * that namespace has no prefix.
-	 */
+  /**
+   * Map of namespace prefixes to URIs that should be written to the document.
+   * This map will <strong>not</strong> include the defaultNamespace, since
+   * that namespace has no prefix.
+   */
     private final Map<String,String> m;
 
     /** 
@@ -149,10 +149,10 @@ public class StaxxasStreamWriter {
      * @param nsToUri Map of each namespace (prefix) to its corresponding URI
      */
     public StaxxasStreamWriter(XMLStreamWriter sw, Map<String,String> nsToUri) {
-    	w = sw;
-    	writer = null;
-    	if (nsToUri == null) m = new HashMap<String,String>();
-    	else 	             m = nsToUri;
+      w = sw;
+      writer = null;
+      if (nsToUri == null) m = new HashMap<String,String>();
+      else               m = nsToUri;
     }
 
     /**
@@ -181,18 +181,18 @@ public class StaxxasStreamWriter {
      * {@code XMLStreamWriter}.
      */
     public StaxxasStreamWriter(Writer writer, Map<String,String> nsToUri) {
-    	try {
-    		this.writer = writer;
-			w = XMLOutputFactory.newFactory().createXMLStreamWriter(writer);
-		} catch (XMLStreamException e) {
-    		throw new StaxxasStreamWriterException("StaxxasStreamWriter constructor",
-    				"XMLOutputFactory.newFactory().createXMLStreamWriter(writer)", e);
-		} catch (FactoryConfigurationError e) {
-    		throw new StaxxasStreamWriterException("StaxxasStreamWriter constructor",
-    				"XMLOutputFactory.newFactory().createXMLStreamWriter(writer)", e);
-		}
-    	if (nsToUri == null) m = new HashMap<String,String>();
-    	else 	             m = nsToUri;
+      try {
+        this.writer = writer;
+      w = XMLOutputFactory.newFactory().createXMLStreamWriter(writer);
+    } catch (XMLStreamException e) {
+        throw new StaxxasStreamWriterException("StaxxasStreamWriter constructor",
+            "XMLOutputFactory.newFactory().createXMLStreamWriter(writer)", e);
+    } catch (FactoryConfigurationError e) {
+        throw new StaxxasStreamWriterException("StaxxasStreamWriter constructor",
+            "XMLOutputFactory.newFactory().createXMLStreamWriter(writer)", e);
+    }
+      if (nsToUri == null) m = new HashMap<String,String>();
+      else               m = nsToUri;
     }
 
     /**
@@ -210,7 +210,7 @@ public class StaxxasStreamWriter {
      * {@code XMLStreamWriter}.
      */    
     public StaxxasStreamWriter(Writer writer) {
-    	this(writer, null);
+      this(writer, null);
     }
     
     /**
@@ -224,7 +224,7 @@ public class StaxxasStreamWriter {
      * writing of the XML elements and content
      */
     public StaxxasStreamWriter(XMLStreamWriter sw) {
-    	this(sw, null);
+      this(sw, null);
     }
 
     /* ---[ Helper setter/mapper functions ]--- */
@@ -249,7 +249,7 @@ public class StaxxasStreamWriter {
      * @param uri String uri for that namespace
      */
     public void mapNamespaceToUri(String ns, String uri) {
-    	m.put(ns, uri);
+      m.put(ns, uri);
     }
 
     /**
@@ -263,7 +263,7 @@ public class StaxxasStreamWriter {
      * namespace to a URI
      */
     public void mapNamespaceToUri(Map<String,String> nsToUri) {
-    	m.putAll(nsToUri);
+      m.putAll(nsToUri);
     }
 
     /**
@@ -280,7 +280,7 @@ public class StaxxasStreamWriter {
      * @param nsUri a URI that is the default namespace
      */
     public void setDefaultNamespace(String nsUri) {
-    	defaultNamespace = nsUri;
+      defaultNamespace = nsUri;
     }
     
     /**
@@ -319,12 +319,12 @@ public class StaxxasStreamWriter {
      * registered to a URI
      */
     public void setCurrentNamespace(String ns) {
-    	if (ns == null) {
-    		currNamespace = null;
-    	} else if (!m.containsKey(ns)) {
-    		throw new IllegalArgumentException("Namespace " + ns + " has not been mapped to a uri");
-    	}
-    	currNamespace = ns;
+      if (ns == null) {
+        currNamespace = null;
+      } else if (!m.containsKey(ns)) {
+        throw new IllegalArgumentException("Namespace " + ns + " has not been mapped to a uri");
+      }
+      currNamespace = ns;
     }
 
     
@@ -343,7 +343,7 @@ public class StaxxasStreamWriter {
      * @return this StaxxasStreamWriter in order to allow method chaining
      */
     public StaxxasStreamWriter startDoc() {
-    	try {
+      try {
           w.writeStartDocument();
           setPrefixes();
           return this;
@@ -428,24 +428,24 @@ public class StaxxasStreamWriter {
      * @return this StaxxasStreamWriter in order to allow method chaining
      */
     public StaxxasStreamWriter endDoc() {
-    	try {
-    		w.writeEndDocument();
-    		w.flush();
-    		w.close();
-    		// if user gave us the java.io.Writer directly, we also 
-    		// flush and close that
-    		if (writer != null) {
-    			writer.flush();
-    			writer.close();
-    		}
-    		return this;
-    	} catch (XMLStreamException e) {
+      try {
+        w.writeEndDocument();
+        w.flush();
+        w.close();
+        // if user gave us the java.io.Writer directly, we also 
+        // flush and close that
+        if (writer != null) {
+          writer.flush();
+          writer.close();
+        }
+        return this;
+      } catch (XMLStreamException e) {
             throw new StaxxasStreamWriterException("endDoc", 
-            		"writeEndDocument/flush/close", e);    		
-    	} catch (IOException e) {
+                "writeEndDocument/flush/close", e);       
+      } catch (IOException e) {
             throw new StaxxasStreamWriterException("endDoc", 
-            		"writeEndDocument/flush/close", e);    		
-		}
+                "writeEndDocument/flush/close", e);       
+    }
     }
 
 
@@ -465,9 +465,9 @@ public class StaxxasStreamWriter {
      * @return this StaxxasStreamWriter in order to allow method chaining
      */
     public StaxxasStreamWriter startRootElement(String localName) {
-		writeElement(localName);
-		writeRootNamespaces(localName);
-		return this;    	
+    writeElement(localName);
+    writeRootNamespaces(localName);
+    return this;      
     }
     
     /**
@@ -485,8 +485,8 @@ public class StaxxasStreamWriter {
      * @return this StaxxasStreamWriter in order to allow method chaining
      */
     public StaxxasStreamWriter startElement(String localName) {
-		writeElement(localName);
-		return this;
+    writeElement(localName);
+    return this;
     }
 
     /**
@@ -509,11 +509,11 @@ public class StaxxasStreamWriter {
      * @return this StaxxasStreamWriter in order to allow method chaining
      */
     public StaxxasStreamWriter startElement(String localName, String nsPrefix) {
-		String hold = currNamespace;
-		currNamespace = nsPrefix;
-    	writeElement(localName);
-    	currNamespace = hold;
-		return this;
+    String hold = currNamespace;
+    currNamespace = nsPrefix;
+      writeElement(localName);
+      currNamespace = hold;
+    return this;
     }
 
     /**
@@ -526,8 +526,8 @@ public class StaxxasStreamWriter {
      * @return this StaxxasStreamWriter in order to allow method chaining
      */
     public StaxxasStreamWriter emptyElement(String localName) {
-    	writeEmptyElement(localName);
-    	return this;
+      writeEmptyElement(localName);
+      return this;
     }
 
     /**
@@ -542,7 +542,7 @@ public class StaxxasStreamWriter {
      * @return this StaxxasStreamWriter in order to allow method chaining
      */
     public StaxxasStreamWriter endElement(String localName) {
-    	return endElement();
+      return endElement();
     }
     
     /**
@@ -553,12 +553,12 @@ public class StaxxasStreamWriter {
      * @return this StaxxasStreamWriter in order to allow method chaining
      */
     public StaxxasStreamWriter endElement() {
-    	try {
-    		w.writeEndElement();
-    		return this;
-    	} catch (XMLStreamException e) {
+      try {
+        w.writeEndElement();
+        return this;
+      } catch (XMLStreamException e) {
             throw new StaxxasStreamWriterException("endDoc", "writeEndElement", e);
-    	}    	
+      }     
     }
 
     /**
@@ -579,12 +579,12 @@ public class StaxxasStreamWriter {
      * @return this StaxxasStreamWriter in order to allow method chaining
      */
     public StaxxasStreamWriter attribute(String localName, String value) {
-    	try {
-			w.writeAttribute(localName, value);
-			return this;
-		} catch (XMLStreamException e) {
-			throw new StaxxasStreamWriterException("writeAttribute", "writeAttribute", e);
-		}
+      try {
+      w.writeAttribute(localName, value);
+      return this;
+    } catch (XMLStreamException e) {
+      throw new StaxxasStreamWriterException("writeAttribute", "writeAttribute", e);
+    }
     }
 
     /**
@@ -593,7 +593,7 @@ public class StaxxasStreamWriter {
      * <p>Attributes written with this method will be prefixed with
      * a namespace prefix you pass in, which can differ from current namespace set by calling 
      * {@link StaxxasStreamWriter#setCurrentNamespace(String)}.</p> 
-     *		
+     *    
      * <p>The namespace prefix and its corresponding URI <strong>must</strong> have already 
      * been registered with this StaxxasStreamWriter. This can be done via one
      * of the {@code mapNamespaceToUri} methods or via the constructor that accepts
@@ -608,13 +608,13 @@ public class StaxxasStreamWriter {
      * throws an XMLStreamException 
      */
     public StaxxasStreamWriter prefixedAttribute(String prefix, 
-    		String localName, String value) {
-    	try {
-			w.writeAttribute(m.get(prefix), localName, value);
-    		return this;
-		} catch (XMLStreamException e) {
-			throw new StaxxasStreamWriterException("writePrefixedAttribute", "writeAttribute", e);
-		}
+        String localName, String value) {
+      try {
+      w.writeAttribute(m.get(prefix), localName, value);
+        return this;
+    } catch (XMLStreamException e) {
+      throw new StaxxasStreamWriterException("writePrefixedAttribute", "writeAttribute", e);
+    }
     }
 
     /**
@@ -626,12 +626,12 @@ public class StaxxasStreamWriter {
      * @return this StaxxasStreamWriter in order to allow method chaining
      */
     public StaxxasStreamWriter characters(String text) {
-    	try {
-    		w.writeCharacters(text);
-			return this;
-		} catch (XMLStreamException e) {
-			throw new StaxxasStreamWriterException("characters", "writeCharacters", e);
-		}
+      try {
+        w.writeCharacters(text);
+      return this;
+    } catch (XMLStreamException e) {
+      throw new StaxxasStreamWriterException("characters", "writeCharacters", e);
+    }
     }
     
     /**
@@ -647,12 +647,12 @@ public class StaxxasStreamWriter {
      * @return this StaxxasStreamWriter in order to allow method chaining
      */
     public StaxxasStreamWriter characters(char[] text, int start, int len) {
-    	try {
-    		w.writeCharacters(text, start, len);
-			return this;
-		} catch (XMLStreamException e) {
-			throw new StaxxasStreamWriterException("characters", "writeCharacters", e);
-		}
+      try {
+        w.writeCharacters(text, start, len);
+      return this;
+    } catch (XMLStreamException e) {
+      throw new StaxxasStreamWriterException("characters", "writeCharacters", e);
+    }
     }
 
     /**
@@ -665,12 +665,12 @@ public class StaxxasStreamWriter {
      * @return this StaxxasStreamWriter in order to allow method chaining
      */
     public StaxxasStreamWriter comment(String text) {
-    	try {
-    		w.writeComment(text);
-			return this;
-		} catch (XMLStreamException e) {
-			throw new StaxxasStreamWriterException("comment", "writeComment", e);
-		}
+      try {
+        w.writeComment(text);
+      return this;
+    } catch (XMLStreamException e) {
+      throw new StaxxasStreamWriterException("comment", "writeComment", e);
+    }
     }
     
     
@@ -690,13 +690,13 @@ public class StaxxasStreamWriter {
      * throws an XMLStreamException 
      */    
     public StaxxasStreamWriter processingInstruction(String target) {
-    	try {
-    		w.writeProcessingInstruction(target);
-			return this;
-		} catch (XMLStreamException e) {
-			throw new StaxxasStreamWriterException("processingInstruction", 
-					"writeProcessingInstruction", e);
-		}    	
+      try {
+        w.writeProcessingInstruction(target);
+      return this;
+    } catch (XMLStreamException e) {
+      throw new StaxxasStreamWriterException("processingInstruction", 
+          "writeProcessingInstruction", e);
+    }     
     }
     
     /**
@@ -715,13 +715,13 @@ public class StaxxasStreamWriter {
      * throws an XMLStreamException 
      */    
     public StaxxasStreamWriter processingInstruction(String target, String data) {
-    	try {
-    		w.writeProcessingInstruction(target, data);
-			return this;
-		} catch (XMLStreamException e) {
-			throw new StaxxasStreamWriterException("processingInstruction", 
-					"writeProcessingInstruction", e);
-		}    	
+      try {
+        w.writeProcessingInstruction(target, data);
+      return this;
+    } catch (XMLStreamException e) {
+      throw new StaxxasStreamWriterException("processingInstruction", 
+          "writeProcessingInstruction", e);
+    }     
     }
     
     /**
@@ -735,12 +735,12 @@ public class StaxxasStreamWriter {
      * throws an XMLStreamException 
      */    
     public StaxxasStreamWriter entityRef(String eref) {
-    	try {
-    		w.writeEntityRef(eref);
-    		return this;
-    	} catch (XMLStreamException e) {
-			throw new StaxxasStreamWriterException("entityRef", "writeEntityRef", e);
-		}
+      try {
+        w.writeEntityRef(eref);
+        return this;
+      } catch (XMLStreamException e) {
+      throw new StaxxasStreamWriterException("entityRef", "writeEntityRef", e);
+    }
     }
     
     /**
@@ -752,12 +752,12 @@ public class StaxxasStreamWriter {
      * throws an XMLStreamException 
      */    
     public StaxxasStreamWriter dtd(String dtd) {
-    	try {
-    		w.writeDTD(dtd);
-    		return this;
-    	} catch (XMLStreamException e) {
-			throw new StaxxasStreamWriterException("dtd", "writeDTD", e);
-		}
+      try {
+        w.writeDTD(dtd);
+        return this;
+      } catch (XMLStreamException e) {
+      throw new StaxxasStreamWriterException("dtd", "writeDTD", e);
+    }
     }
     
     /**
@@ -769,51 +769,51 @@ public class StaxxasStreamWriter {
      * throws an XMLStreamException 
      */    
     public StaxxasStreamWriter cdata(String cdata) {
-    	try {
-    		w.writeCData(cdata);
-    		return this;
-    	} catch (XMLStreamException e) {
-			throw new StaxxasStreamWriterException("cdata", "writeCData", e);
-		}
+      try {
+        w.writeCData(cdata);
+        return this;
+      } catch (XMLStreamException e) {
+      throw new StaxxasStreamWriterException("cdata", "writeCData", e);
+    }
     }
     
     /* ---[ private methods ]--- */
     
     private void writeRootNamespaces(String name) {
-		try {
-			if (defaultNamespace != null) {
-				w.writeDefaultNamespace(defaultNamespace);
-			}
-			for (String ns: m.keySet()) {
-				w.writeNamespace(ns, m.get(ns));
-			}
-		} catch (XMLStreamException e) {
-    		throw new StaxxasStreamWriterException("writeRootNamespaces", "writeNamespace", e);
-		}
+    try {
+      if (defaultNamespace != null) {
+        w.writeDefaultNamespace(defaultNamespace);
+      }
+      for (String ns: m.keySet()) {
+        w.writeNamespace(ns, m.get(ns));
+      }
+    } catch (XMLStreamException e) {
+        throw new StaxxasStreamWriterException("writeRootNamespaces", "writeNamespace", e);
+    }
     }    
 
     private void writeEmptyElement(String name) {
-    	try {
-    		if (currNamespace != null) {
-    			w.writeEmptyElement(m.get(currNamespace), name);
-    		} else {
-    			w.writeEmptyElement(name);
-    		}    		
-		} catch (XMLStreamException e) {
-    		throw new StaxxasStreamWriterException("emptyElement", "writeEmptyElement", e);    		
-		}
+      try {
+        if (currNamespace != null) {
+          w.writeEmptyElement(m.get(currNamespace), name);
+        } else {
+          w.writeEmptyElement(name);
+        }       
+    } catch (XMLStreamException e) {
+        throw new StaxxasStreamWriterException("emptyElement", "writeEmptyElement", e);       
+    }
     }
     
     private void writeElement(String name) {
-    	try {
-    		if (currNamespace != null) {
-    			w.writeStartElement(m.get(currNamespace), name);
-    		} else {
-    			w.writeStartElement(name);
-    		}
-    	} catch (XMLStreamException e) {
-    		throw new StaxxasStreamWriterException("startElement", "writeStartElement", e);    		
-    	}
+      try {
+        if (currNamespace != null) {
+          w.writeStartElement(m.get(currNamespace), name);
+        } else {
+          w.writeStartElement(name);
+        }
+      } catch (XMLStreamException e) {
+        throw new StaxxasStreamWriterException("startElement", "writeStartElement", e);       
+      }
     }
 
     
@@ -826,13 +826,13 @@ public class StaxxasStreamWriter {
      * @throws StaxxasStreamWriterException (RuntimeException) if the underlying
      * StAX library throws an XMLStreamException 
      */    private void setPrefixes() {
-    	try {
-    		for (String p: m.keySet()) {
-    			w.setPrefix(p, m.get(p));
-    		}
-    	} catch (XMLStreamException e) {
-			throw new StaxxasStreamWriterException("startDocument", 
-					"setPrefixes", e);    					    		
-    	}
+      try {
+        for (String p: m.keySet()) {
+          w.setPrefix(p, m.get(p));
+        }
+      } catch (XMLStreamException e) {
+      throw new StaxxasStreamWriterException("startDocument", 
+          "setPrefixes", e);                      
+      }
     }
 }

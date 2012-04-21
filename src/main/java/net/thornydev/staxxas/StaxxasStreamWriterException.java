@@ -14,15 +14,15 @@ package net.thornydev.staxxas;
  * @author midpeter444
  */
 public class StaxxasStreamWriterException extends RuntimeException {
-	private static final long serialVersionUID = -6621587869107563570L;
+  private static final long serialVersionUID = -6621587869107563570L;
 
-	/**
-	 * Reference to the StaxxasWriter method were the exception occurred
-	 */
-	private final String staxWriterMethod;
-	/**
-	 * Reference to the JAXP StAX XMLStreamWriter method were the exception occurred
-	 */
+  /**
+   * Reference to the StaxxasWriter method were the exception occurred
+   */
+  private final String staxWriterMethod;
+  /**
+   * Reference to the JAXP StAX XMLStreamWriter method were the exception occurred
+   */
     private final String xmlStreamWriterMethod;
 
     /**
