@@ -229,6 +229,7 @@ Goal: create the following XML file.
 
 <hr/>
 
-### Simple Examples 
+### License
 
-More here later.  The library is not very large, so the best thing is to look at the StaxxasStreamWriterTest unit test.  It shows simple to complex examples.
+Staxxas is open source released under the MIT License: http://opensource.org/licenses/MIT
+
